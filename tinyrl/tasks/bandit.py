@@ -49,12 +49,14 @@ class BanditActor(BaseActor[Action]):
 def run() -> None:
     from tinyrl.reinforce import Reinforce
 
-    numpy.random.seed(0)
+    numpy.random.seed(16)
     torch.manual_seed(16)
 
-    env = Bandit(10)
-    actor = BanditActor(10)
-    policy = BanditPolicyNetwork(10)
+    num_bandits = 10
+
+    env = Bandit(num_bandits)
+    actor = BanditActor(num_bandits)
+    policy = BanditPolicyNetwork(num_bandits)
     optimizer = torch.optim.Adam(policy.parameters(), lr=0.1)
     reinforce = Reinforce(env, actor, policy, optimizer, gamma=0.99)
     reinforce.learn(max_episodes=1000)
@@ -66,7 +68,10 @@ def run() -> None:
         for _ in range(num_trials):
             reward += env.step(actor(policy(0))[0])[1]
 
-    print(f"Earned reward in {num_trials} trials: {reward}")
+    random_reward = num_trials * numpy.sum(2 * env._probs - 1) / num_bandits
+
+    print(f"Random reward: {random_reward:.2f}")
+    print(f"Actual reward: {reward:.2f}")
 
 
 if __name__ == "__main__":
