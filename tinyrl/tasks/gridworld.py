@@ -77,7 +77,7 @@ class GridWorld(BaseEnv["State", "Action"]):
 
     def animate(
         self,
-        actor: Callable[[State], Action],
+        sampler: Callable[[State], Action],
         *,
         max_steps: int | None = None,
         interval: float = 0.1,
@@ -88,7 +88,7 @@ class GridWorld(BaseEnv["State", "Action"]):
         while not done and (max_steps is None or step < max_steps):
             print(f"[ step: {step} ]")
             self.render()
-            action = actor(state)
+            action = sampler(state)
             state, _, done = self.step(action)
             time.sleep(interval)
             step += 1
