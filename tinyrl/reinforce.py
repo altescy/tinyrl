@@ -31,7 +31,7 @@ class Reinforce(Generic[_T_State, _T_Action]):
         states: list[_T_State],
         actions: list[_T_Action],
         rewards: list[float],
-    ) -> None:
+    ) -> float:
         self._policy.train()
         self._optimizer.zero_grad()
 
@@ -45,6 +45,7 @@ class Reinforce(Generic[_T_State, _T_Action]):
 
         loss.backward()  # type: ignore[no-untyped-call]
         self._optimizer.step()
+        return float(loss.item())
 
     def learn(self, max_episodes: int) -> None:
         with tqdm(range(max_episodes)) as pbar:
@@ -63,8 +64,9 @@ class Reinforce(Generic[_T_State, _T_Action]):
                         actions.append(action)
                         rewards.append(reward)
 
-                self._reinforce(states, actions, rewards)
+                loss = self._reinforce(states, actions, rewards)
                 pbar.set_postfix(
                     episode=episode,
+                    loss=loss,
                     reward=sum(rewards),
                 )
