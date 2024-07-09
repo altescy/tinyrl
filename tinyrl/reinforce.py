@@ -36,7 +36,7 @@ class Reinforce(Generic[_T_State, _T_Action]):
         self._optimizer.zero_grad()
 
         returns = 0.0
-        loss = next(self._policy.parameters()).new_tensor(0.0)
+        loss = next(self._policy.parameters()).new_tensor(0.0, requires_grad=False)
         for state, action, reward in reversed(list(zip(states, actions, rewards))):
             returns = reward + self._gamma * returns
             action_probs = self._policy(state)
