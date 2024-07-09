@@ -51,15 +51,17 @@ class Reinforce(Generic[_T_State, _T_Action]):
             for episode in pbar:
                 states, actions, rewards = [], [], []
 
-                state = self._env.reset()
-                done = False
-                while not done:
-                    states.append(state)
-                    action_probs = self._policy(state)
-                    action, action_prob = self._actor(action_probs)
-                    state, reward, done = self._env.step(action)
-                    actions.append(action)
-                    rewards.append(reward)
+                self._policy.eval()
+                with torch.inference_mode():
+                    state = self._env.reset()
+                    done = False
+                    while not done:
+                        states.append(state)
+                        action_probs = self._policy(state)
+                        action, action_prob = self._actor(action_probs)
+                        state, reward, done = self._env.step(action)
+                        actions.append(action)
+                        rewards.append(reward)
 
                 self._reinforce(states, actions, rewards)
                 pbar.set_postfix(
