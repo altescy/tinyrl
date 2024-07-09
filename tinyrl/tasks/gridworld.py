@@ -121,10 +121,12 @@ class GridWorldActor(BaseActor[Action]):
 def run() -> None:
     from tinyrl.reinforce import Reinforce
 
+    torch.manual_seed(16)
+
     env = GridWorld(5)
     actor = GridWorldActor()
     policy = GridWorldPolicyNetwork(2, 4)
-    optimizer = torch.optim.Adam(policy.parameters(), lr=0.005)
+    optimizer = torch.optim.Adam(policy.parameters(), lr=0.05)
     reinforce = Reinforce(
         env=env,
         actor=actor,
