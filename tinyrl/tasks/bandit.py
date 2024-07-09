@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Literal, TypeAlias, cast
 
 import numpy
@@ -24,6 +25,21 @@ class Bandit(BaseEnv[State, Action]):
     def step(self, action: Action) -> tuple[State, float, bool]:
         reward = 1 if numpy.random.rand() < self._probs[action] else -1
         return 0, reward, True
+
+    def evaluate(
+        self,
+        sampler: Callable[[], Action],
+        *,
+        num_trials: int = 100,
+    ) -> None:
+        reward = 0.0
+        for _ in range(num_trials):
+            reward += self.step(sampler())[1]
+
+        random_reward = num_trials * numpy.sum(2 * self._probs - 1) / self._num_bandits
+
+        print(f"Random reward: {random_reward:.2f}")
+        print(f"Actual reward: {reward:.2f}")
 
 
 class BanditPolicyNetwork(BasePolicyNetwork[State]):
@@ -61,17 +77,9 @@ def run() -> None:
     reinforce = Reinforce(env, actor, policy, optimizer, gamma=0.99)
     reinforce.learn(max_episodes=1000)
 
-    num_trials = 100
     policy.eval()
     with torch.inference_mode():
-        reward = 0.0
-        for _ in range(num_trials):
-            reward += env.step(actor(policy(0))[0])[1]
-
-    random_reward = num_trials * numpy.sum(2 * env._probs - 1) / num_bandits
-
-    print(f"Random reward: {random_reward:.2f}")
-    print(f"Actual reward: {reward:.2f}")
+        env.evaluate(lambda: actor(policy(0))[0])
 
 
 if __name__ == "__main__":
