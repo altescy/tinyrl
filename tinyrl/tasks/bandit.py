@@ -6,7 +6,8 @@ from typing import Literal, TypeAlias, cast
 import numpy
 import torch
 
-from tinyrl.actor import BaseActor
+from tinyrl.agent import BaseTorchAgent
+from tinyrl.distribution import TorchCategoricalDistribution
 from tinyrl.environment import BaseEnvironment
 from tinyrl.network import BasePolicyNetwork
 
@@ -28,13 +29,13 @@ class Bandit(BaseEnvironment[State, Action]):
 
     def evaluate(
         self,
-        sampler: Callable[[], Action],
+        act: Callable[[State], Action],
         *,
         num_trials: int = 100,
     ) -> None:
         reward = 0.0
         for _ in range(num_trials):
-            reward += self.step(sampler())[1]
+            reward += self.step(act(0))[1]
 
         random_reward = num_trials * numpy.sum(2 * self._probs - 1) / self._num_bandits
 
@@ -52,17 +53,15 @@ class BanditPolicyNetwork(BasePolicyNetwork[State]):
         return cast(torch.Tensor, self._layer(state_tensor).softmax(-1))
 
 
-class BanditActor(BaseActor[Action]):
-    def __init__(self, num_bandits: int) -> None:
-        self._num_bandits = num_bandits
+class BanditAgent(BaseTorchAgent[State, Action]):
+    def __init__(self, policy: BanditPolicyNetwork) -> None:
+        super().__init__()
+        self._policy = policy
 
-    def index(self, action: Action) -> int:
-        return action
-
-    def sample(self, probs: torch.Tensor) -> tuple[Action, float]:
-        m = torch.distributions.Categorical(probs)  # type: ignore[no-untyped-call]
-        action = int(m.sample().item())  # type: ignore[no-untyped-call]
-        return action, float(probs[action].item())
+    def dist(self, state: State) -> TorchCategoricalDistribution:
+        probs = self._policy(state)
+        actions = list(range(len(probs)))
+        return TorchCategoricalDistribution(probs, actions)
 
 
 def run_reinforce() -> None:
@@ -74,15 +73,15 @@ def run_reinforce() -> None:
     num_bandits = 10
 
     env = Bandit(num_bandits)
-    actor = BanditActor(num_bandits)
     policy = BanditPolicyNetwork(num_bandits)
+    agent = BanditAgent(policy)
     optimizer = torch.optim.Adam(policy.parameters(), lr=0.01)
-    reinforce = Reinforce(env, actor, policy, optimizer, gamma=0.99)
+    reinforce = Reinforce(env, agent, optimizer)
     reinforce.learn(max_episodes=1000)
 
     policy.eval()
     with torch.inference_mode():
-        env.evaluate(lambda: actor.sample(policy(0))[0])
+        env.evaluate(agent.act)
 
 
 if __name__ == "__main__":

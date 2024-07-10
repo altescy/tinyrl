@@ -3,9 +3,9 @@ from typing import Generic
 import torch
 from tqdm.auto import tqdm
 
-from tinyrl.actor import BaseActor
+from tinyrl.agent import BaseTorchAgent
 from tinyrl.environment import BaseEnvironment
-from tinyrl.network import BasePolicyNetwork, BaseValueNetwork
+from tinyrl.network import BaseValueNetwork
 from tinyrl.types import T_Action, T_State
 
 
@@ -13,8 +13,7 @@ class PPO(Generic[T_State, T_Action]):
     def __init__(
         self,
         env: BaseEnvironment[T_State, T_Action],
-        actor: BaseActor[T_Action],
-        policy: BasePolicyNetwork[T_State],
+        agent: BaseTorchAgent[T_State, T_Action],
         value: BaseValueNetwork[T_State],
         policy_optimizer: torch.optim.Optimizer,
         value_optimizer: torch.optim.Optimizer,
@@ -25,8 +24,7 @@ class PPO(Generic[T_State, T_Action]):
         entropy_weight: float = 0.01,
     ) -> None:
         self._env = env
-        self._actor = actor
-        self._policy = policy
+        self._agent = agent
         self._value = value
         self._policy_optimizer = policy_optimizer
         self._value_optimizer = value_optimizer
@@ -51,22 +49,20 @@ class PPO(Generic[T_State, T_Action]):
         returns: list[float],
         old_log_probs: list[float],
     ) -> float:
-        self._policy.train()
+        self._agent.train()
         self._value.train()
         self._policy_optimizer.zero_grad()
         self._value_optimizer.zero_grad()
 
-        new_tensor = next(self._policy.parameters()).new_tensor
+        new_tensor = next(self._agent.parameters()).new_tensor
 
         _returns = new_tensor(returns)
         _old_log_probs = new_tensor(old_log_probs)
 
-        policy_probs = torch.stack([self._policy(state) for state in states])
+        action_dists = [self._agent.dist(state) for state in states]
         values = torch.concat([self._value(state) for state in states])
 
-        new_log_probs = torch.stack(
-            [self._actor.select(probs, action).log() for probs, action in zip(policy_probs, actions)]
-        )
+        new_log_probs = torch.stack([dist.log_prob(action) for dist, action in zip(action_dists, actions)])
 
         advantages = _returns - values
         ratio = (new_log_probs - _old_log_probs).exp()
@@ -75,7 +71,7 @@ class PPO(Generic[T_State, T_Action]):
 
         policy_loss = -torch.min(surr1, surr2).mean()
         value_loss = (_returns - values).pow(2).mean()
-        entropy_loss = -torch.sum(policy_probs * policy_probs.log(), dim=1).mean()
+        entropy_loss = torch.stack([dist.entropy() for dist in action_dists]).mean()
 
         loss = policy_loss + self._value_weight * value_loss + self._entropy_weight * entropy_loss
 
@@ -90,20 +86,19 @@ class PPO(Generic[T_State, T_Action]):
             for episode in pbar:
                 states, actions, rewards, old_log_probs = [], [], [], []
 
-                self._policy.eval()
+                self._agent.eval()
                 self._value.eval()
                 with torch.inference_mode():
                     state = self._env.reset()
                     done = False
                     while not done:
                         states.append(state)
-                        action_probs = self._policy(state)
-                        action, action_prob = self._actor.sample(action_probs)
+                        action, action_prob = self._agent.sample(state)
                         state, reward, done = self._env.step(action)
 
                         actions.append(action)
                         rewards.append(reward)
-                        old_log_probs.append(action_prob)
+                        old_log_probs.append(float(action_prob.item()))
 
                 returns = self._compute_returns(rewards)
                 loss = self._ppo(states, actions, returns, old_log_probs)

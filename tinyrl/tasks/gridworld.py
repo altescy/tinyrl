@@ -7,7 +7,8 @@ from typing import Callable, cast
 
 import torch
 
-from tinyrl.actor import BaseActor
+from tinyrl.agent import BaseTorchAgent
+from tinyrl.distribution import TorchCategoricalDistribution
 from tinyrl.environment import BaseEnvironment
 from tinyrl.network import BasePolicyNetwork, BaseValueNetwork
 
@@ -125,13 +126,15 @@ class GridWorldValueNetwork(BaseValueNetwork[State]):
         return cast(torch.Tensor, self._linear(state_tensor))
 
 
-class GridWorldActor(BaseActor[Action]):
-    def index(self, action: Action) -> int:
-        return action
+class GridWorldAgent(BaseTorchAgent[State, Action]):
+    def __init__(self, policy: GridWorldPolicyNetwork) -> None:
+        super().__init__()
+        self._policy = policy
 
-    def sample(self, probs: torch.Tensor) -> tuple[Action, float]:
-        action = int(torch.multinomial(probs, 1).item())
-        return Action(action), float(probs[action].item())
+    def dist(self, state: State) -> TorchCategoricalDistribution:
+        action_probs = self._policy(state)
+        actions = [Action(i) for i in range(len(action_probs))]
+        return TorchCategoricalDistribution(action_probs, actions)
 
 
 def run_reinforce() -> None:
@@ -140,22 +143,20 @@ def run_reinforce() -> None:
     torch.manual_seed(16)
 
     env = GridWorld(5)
-    actor = GridWorldActor()
     policy = GridWorldPolicyNetwork()
+    agent = GridWorldAgent(policy)
     optimizer = torch.optim.Adam(policy.parameters(), lr=0.05)
     reinforce = Reinforce(
         env=env,
-        actor=actor,
-        policy=policy,
+        agent=agent,
         optimizer=optimizer,
-        gamma=0.99,
     )
 
     reinforce.learn(max_episodes=1000)
 
     policy.eval()
     with torch.inference_mode():
-        env.animate(lambda state: actor.sample(policy(state))[0])
+        env.animate(agent.act)
 
 
 def run_ppo() -> None:
@@ -164,16 +165,15 @@ def run_ppo() -> None:
     torch.manual_seed(16)
 
     env = GridWorld(5)
-    actor = GridWorldActor()
     policy = GridWorldPolicyNetwork()
     value = GridWorldValueNetwork()
+    agent = GridWorldAgent(policy)
     policy_optimizer = torch.optim.Adam(policy.parameters(), lr=0.05)
     value_optimizer = torch.optim.Adam(value.parameters(), lr=0.05)
 
     ppo = PPO(
         env=env,
-        actor=actor,
-        policy=policy,
+        agent=agent,
         value=value,
         policy_optimizer=policy_optimizer,
         value_optimizer=value_optimizer,
@@ -183,7 +183,7 @@ def run_ppo() -> None:
 
     policy.eval()
     with torch.inference_mode():
-        env.animate(lambda state: actor.sample(policy(state))[0])
+        env.animate(agent.act)
 
 
 if __name__ == "__main__":

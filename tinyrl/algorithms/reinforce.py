@@ -3,9 +3,8 @@ from typing import Generic
 import torch
 from tqdm.auto import tqdm
 
-from tinyrl.actor import BaseActor
+from tinyrl.agent import BaseTorchAgent
 from tinyrl.environment import BaseEnvironment
-from tinyrl.network import BasePolicyNetwork
 from tinyrl.types import T_Action, T_State
 
 
@@ -13,14 +12,13 @@ class Reinforce(Generic[T_State, T_Action]):
     def __init__(
         self,
         env: BaseEnvironment[T_State, T_Action],
-        actor: BaseActor[T_Action],
-        policy: BasePolicyNetwork[T_State],
+        agent: BaseTorchAgent[T_State, T_Action],
         optimizer: torch.optim.Optimizer,
-        gamma: float,
+        *,
+        gamma: float = 0.99,
     ) -> None:
         self._env = env
-        self._actor = actor
-        self._policy = policy
+        self._agent = agent
         self._optimizer = optimizer
         self._gamma = gamma
 
@@ -30,15 +28,14 @@ class Reinforce(Generic[T_State, T_Action]):
         actions: list[T_Action],
         rewards: list[float],
     ) -> float:
-        self._policy.train()
+        self._agent.train()
         self._optimizer.zero_grad()
 
         returns = 0.0
-        loss = next(self._policy.parameters()).new_tensor(0.0, requires_grad=False)
+        loss = next(self._agent.parameters()).new_tensor(0.0, requires_grad=False)
         for state, action, reward in reversed(list(zip(states, actions, rewards))):
             returns = reward + self._gamma * returns
-            action_probs = self._policy(state)
-            action_prob = self._actor.select(action_probs, action)
+            action_prob = self._agent.prob(state, action)
             loss += -action_prob.log() * returns
 
         loss.backward()  # type: ignore[no-untyped-call]
@@ -50,14 +47,13 @@ class Reinforce(Generic[T_State, T_Action]):
             for episode in pbar:
                 states, actions, rewards = [], [], []
 
-                self._policy.eval()
+                self._agent.eval()
                 with torch.inference_mode():
                     state = self._env.reset()
                     done = False
                     while not done:
                         states.append(state)
-                        action_probs = self._policy(state)
-                        action, action_prob = self._actor.sample(action_probs)
+                        action, action_prob = self._agent.sample(state)
                         state, reward, done = self._env.step(action)
                         actions.append(action)
                         rewards.append(reward)
