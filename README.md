@@ -8,7 +8,8 @@ learning algorithms with NumPy and PyTorch.
 - [x] [Q-Learning](./tinyrl/algorithms/qlearning.py)
 - [ ] Deep Q-Network (DQN)
 - [x] [REINFORCE](./tinyrl/algorithms/reinforce.py)
-- [ ] Actor-Critic
+- [ ] Asynchronous Advantage Actor-Critic (A3C)
+- [ ] Deep Deterministic Policy Gradient (DDPG)
 - [x] [Proximal Policy Optimization (PPO)](./tinyrl/algorithms/ppo.py)
 
 ## Demos
