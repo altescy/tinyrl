@@ -52,16 +52,6 @@ class BanditPolicyNetwork(BasePolicyNetwork[State]):
         return cast(torch.Tensor, self._layer(state_tensor).softmax(-1))
 
 
-class BanditValueNetwork(BaseValueNetwork[State]):
-    def __init__(self) -> None:
-        super().__init__()
-        self._linear = torch.nn.Linear(1, 1)
-
-    def forward(self, state: State) -> torch.Tensor:
-        state_tensor = self._linear.weight.new_tensor([state], requires_grad=False)
-        return cast(torch.Tensor, self._linear(state_tensor))
-
-
 class BanditActor(BaseActor[Action]):
     def __init__(self, num_bandits: int) -> None:
         self._num_bandits = num_bandits
@@ -95,48 +85,15 @@ def run_reinforce() -> None:
         env.evaluate(lambda: actor.sample(policy(0))[0])
 
 
-def run_ppo() -> None:
-    from tinyrl.ppo import PPO
-
-    numpy.random.seed(16)
-    torch.manual_seed(16)
-
-    num_bandits = 10
-
-    env = Bandit(num_bandits)
-    actor = BanditActor(num_bandits)
-    policy = BanditPolicyNetwork(num_bandits)
-    value = BanditValueNetwork()
-    policy_optimizer = torch.optim.Adam(policy.parameters(), lr=0.01)
-    value_optimizer = torch.optim.Adam(value.parameters(), lr=0.01)
-
-    ppo = PPO(
-        env=env,
-        actor=actor,
-        policy=policy,
-        value=value,
-        policy_optimizer=policy_optimizer,
-        value_optimizer=value_optimizer,
-    )
-
-    ppo.learn(max_episodes=1000)
-
-    policy.eval()
-    with torch.inference_mode():
-        env.evaluate(lambda: actor.sample(policy(0))[0])
-
-
 if __name__ == "__main__":
     import sys
 
     if len(sys.argv) != 2:
-        print(f"Usage: {sys.argv[0]} [reinforce|ppo]")
+        print(f"Usage: {sys.argv[0]} [reinforce]")
         sys.exit(1)
 
     if sys.argv[1] == "reinforce":
         run_reinforce()
-    elif sys.argv[1] == "ppo":
-        run_ppo()
     else:
         print(f"Invalid algorithm: {sys.argv[1]}")
         sys.exit(1)
