@@ -5,7 +5,7 @@ learning algorithms with NumPy and PyTorch.
 
 ## Algorithms
 
-- [x] [Q-Learning](./tinyrl/algorithms/q_learning.py)
+- [x] [Q-Learning](./tinyrl/algorithms/qlearning.py)
 - [ ] Deep Q-Network (DQN)
 - [x] [REINFORCE](./tinyrl/algorithms/reinforce.py)
 - [ ] Actor-Critic
