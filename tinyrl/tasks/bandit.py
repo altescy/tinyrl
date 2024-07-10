@@ -56,10 +56,13 @@ class BanditActor(BaseActor[Action]):
     def __init__(self, num_bandits: int) -> None:
         self._num_bandits = num_bandits
 
-    def __call__(self, probs: torch.Tensor) -> tuple[Action, torch.Tensor]:
+    def index(self, probs: torch.Tensor, action: Action) -> torch.Tensor:
+        return probs[action]
+
+    def sample(self, probs: torch.Tensor) -> tuple[Action, float]:
         m = torch.distributions.Categorical(probs)  # type: ignore[no-untyped-call]
         action = int(m.sample().item())  # type: ignore[no-untyped-call]
-        return action, probs[action]
+        return action, float(probs[action].item())
 
 
 def run() -> None:
@@ -79,7 +82,7 @@ def run() -> None:
 
     policy.eval()
     with torch.inference_mode():
-        env.evaluate(lambda: actor(policy(0))[0])
+        env.evaluate(lambda: actor.sample(policy(0))[0])
 
 
 if __name__ == "__main__":

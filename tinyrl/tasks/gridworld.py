@@ -77,7 +77,7 @@ class GridWorld(BaseEnvironment["State", "Action"]):
 
     def animate(
         self,
-        sampler: Callable[[State], Action],
+        act: Callable[[State], Action],
         *,
         max_steps: int | None = None,
         interval: float = 0.1,
@@ -88,7 +88,7 @@ class GridWorld(BaseEnvironment["State", "Action"]):
         while not done and (max_steps is None or step < max_steps):
             print(f"[ step: {step} ]")
             self.render()
-            action = sampler(state)
+            action = act(state)
             state, _, done = self.step(action)
             time.sleep(interval)
             step += 1
@@ -113,9 +113,12 @@ class GridWorldPolicyNetwork(BasePolicyNetwork[State]):
 
 
 class GridWorldActor(BaseActor[Action]):
-    def __call__(self, probs: torch.Tensor) -> tuple[Action, torch.Tensor]:
+    def select(self, probs: torch.Tensor, action: Action) -> torch.Tensor:
+        return probs[action]
+
+    def sample(self, probs: torch.Tensor) -> tuple[Action, float]:
         action = int(torch.multinomial(probs, 1).item())
-        return Action(action), probs[action]
+        return Action(action), float(probs[action].item())
 
 
 def run() -> None:
@@ -139,7 +142,7 @@ def run() -> None:
 
     policy.eval()
     with torch.inference_mode():
-        env.animate(lambda state: actor(policy(state))[0])
+        env.animate(lambda state: actor.sample(policy(state))[0])
 
 
 if __name__ == "__main__":
