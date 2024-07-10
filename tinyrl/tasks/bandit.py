@@ -8,7 +8,7 @@ import torch
 
 from tinyrl.actor import BaseActor
 from tinyrl.environment import BaseEnvironment
-from tinyrl.network import BasePolicyNetwork, BaseValueNetwork
+from tinyrl.network import BasePolicyNetwork
 
 State: TypeAlias = Literal[0]
 Action: TypeAlias = int
