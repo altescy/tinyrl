@@ -4,7 +4,7 @@ import torch
 from tqdm.auto import tqdm
 
 from tinyrl.actor import BaseActor
-from tinyrl.env import BaseEnv
+from tinyrl.environment import BaseEnvironment
 from tinyrl.network import BasePolicyNetwork
 
 _T_State = TypeVar("_T_State")
@@ -14,7 +14,7 @@ _T_Action = TypeVar("_T_Action")
 class Reinforce(Generic[_T_State, _T_Action]):
     def __init__(
         self,
-        env: BaseEnv[_T_State, _T_Action],
+        env: BaseEnvironment[_T_State, _T_Action],
         actor: BaseActor[_T_Action],
         policy: BasePolicyNetwork[_T_State],
         optimizer: torch.optim.Optimizer,

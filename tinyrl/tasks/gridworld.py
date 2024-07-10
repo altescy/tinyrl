@@ -8,7 +8,7 @@ from typing import Callable, cast
 import torch
 
 from tinyrl.actor import BaseActor
-from tinyrl.env import BaseEnv
+from tinyrl.environment import BaseEnvironment
 from tinyrl.network import BasePolicyNetwork
 
 
@@ -31,7 +31,7 @@ class Action(int, enum.Enum):
     RIGHT = 3
 
 
-class GridWorld(BaseEnv["State", "Action"]):
+class GridWorld(BaseEnvironment["State", "Action"]):
     def __init__(self, size: int) -> None:
         self._size = size
         self._state = State(Position(0, 0))

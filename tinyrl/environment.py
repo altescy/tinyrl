@@ -6,7 +6,7 @@ _T_State = TypeVar("_T_State")
 _T_Action = TypeVar("_T_Action")
 
 
-class BaseEnv(Generic[_T_State, _T_Action]):
+class BaseEnvironment(Generic[_T_State, _T_Action]):
     def reset(self) -> _T_State:
         raise NotImplementedError
 

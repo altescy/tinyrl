@@ -7,14 +7,14 @@ import numpy
 import torch
 
 from tinyrl.actor import BaseActor
-from tinyrl.env import BaseEnv
+from tinyrl.environment import BaseEnvironment
 from tinyrl.network import BasePolicyNetwork
 
 State: TypeAlias = Literal[0]
 Action: TypeAlias = int
 
 
-class Bandit(BaseEnv[State, Action]):
+class Bandit(BaseEnvironment[State, Action]):
     def __init__(self, num_bandints: int) -> None:
         self._num_bandits = num_bandints
         self._probs = numpy.random.rand(num_bandints)
