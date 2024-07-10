@@ -40,7 +40,7 @@ class Reinforce(Generic[_T_State, _T_Action]):
         for state, action, reward in reversed(list(zip(states, actions, rewards))):
             returns = reward + self._gamma * returns
             action_probs = self._policy(state)
-            _, action_prob = self._actor(action_probs)
+            action_prob = self._actor.select(action_probs, action)
             loss += -action_prob.log() * returns
 
         loss.backward()  # type: ignore[no-untyped-call]
@@ -59,7 +59,7 @@ class Reinforce(Generic[_T_State, _T_Action]):
                     while not done:
                         states.append(state)
                         action_probs = self._policy(state)
-                        action, action_prob = self._actor(action_probs)
+                        action, action_prob = self._actor.sample(action_probs)
                         state, reward, done = self._env.step(action)
                         actions.append(action)
                         rewards.append(reward)
@@ -68,5 +68,4 @@ class Reinforce(Generic[_T_State, _T_Action]):
                 pbar.set_postfix(
                     episode=episode,
                     loss=loss,
-                    reward=sum(rewards),
                 )

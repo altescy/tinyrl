@@ -9,7 +9,7 @@ import torch
 
 from tinyrl.actor import BaseActor
 from tinyrl.environment import BaseEnvironment
-from tinyrl.network import BasePolicyNetwork
+from tinyrl.network import BasePolicyNetwork, BaseValueNetwork
 
 
 @dataclasses.dataclass(frozen=True)
@@ -97,9 +97,9 @@ class GridWorld(BaseEnvironment["State", "Action"]):
 
 
 class GridWorldPolicyNetwork(BasePolicyNetwork[State]):
-    def __init__(self, input_size: int, output_size: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._linear = torch.nn.Linear(input_size, output_size)
+        self._linear = torch.nn.Linear(2, 4)
 
     def forward(self, state: State) -> torch.Tensor:
         state_tensor = self._linear.weight.new_tensor(
@@ -112,6 +112,19 @@ class GridWorldPolicyNetwork(BasePolicyNetwork[State]):
         )
 
 
+class GridWorldValueNetwork(BaseValueNetwork[State]):
+    def __init__(self) -> None:
+        super().__init__()
+        self._linear = torch.nn.Linear(2, 1)
+
+    def forward(self, state: State) -> torch.Tensor:
+        state_tensor = self._linear.weight.new_tensor(
+            [state.position.x, state.position.y],
+            requires_grad=False,
+        ).float()
+        return cast(torch.Tensor, self._linear(state_tensor))
+
+
 class GridWorldActor(BaseActor[Action]):
     def select(self, probs: torch.Tensor, action: Action) -> torch.Tensor:
         return probs[action]
@@ -121,14 +134,14 @@ class GridWorldActor(BaseActor[Action]):
         return Action(action), float(probs[action].item())
 
 
-def run() -> None:
+def run_reinforce() -> None:
     from tinyrl.reinforce import Reinforce
 
     torch.manual_seed(16)
 
     env = GridWorld(5)
     actor = GridWorldActor()
-    policy = GridWorldPolicyNetwork(2, 4)
+    policy = GridWorldPolicyNetwork()
     optimizer = torch.optim.Adam(policy.parameters(), lr=0.05)
     reinforce = Reinforce(
         env=env,
@@ -145,5 +158,45 @@ def run() -> None:
         env.animate(lambda state: actor.sample(policy(state))[0])
 
 
+def run_ppo() -> None:
+    from tinyrl.ppo import PPO
+
+    torch.manual_seed(16)
+
+    env = GridWorld(5)
+    actor = GridWorldActor()
+    policy = GridWorldPolicyNetwork()
+    value = GridWorldValueNetwork()
+    policy_optimizer = torch.optim.Adam(policy.parameters(), lr=0.05)
+    value_optimizer = torch.optim.Adam(value.parameters(), lr=0.05)
+
+    ppo = PPO(
+        env=env,
+        actor=actor,
+        policy=policy,
+        value=value,
+        policy_optimizer=policy_optimizer,
+        value_optimizer=value_optimizer,
+    )
+
+    ppo.learn(max_episodes=1000)
+
+    policy.eval()
+    with torch.inference_mode():
+        env.animate(lambda state: actor.sample(policy(state))[0])
+
+
 if __name__ == "__main__":
-    run()
+    import sys
+
+    if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} [reinforce|ppo]")
+        sys.exit(1)
+
+    if sys.argv[1] == "reinforce":
+        run_reinforce()
+    elif sys.argv[1] == "ppo":
+        run_ppo()
+    else:
+        print(f"Invalid algorithm: {sys.argv[1]}")
+        sys.exit(1)
