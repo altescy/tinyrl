@@ -11,6 +11,3 @@ class BaseEnvironment(Generic[T_State, T_Action]):
 
     def step(self, action: T_Action) -> tuple[T_State, float, bool]:
         raise NotImplementedError
-
-    def available_actions(self) -> list[T_Action]:
-        raise NotImplementedError

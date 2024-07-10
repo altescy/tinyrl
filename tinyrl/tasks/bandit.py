@@ -27,6 +27,9 @@ class Bandit(BaseEnvironment[State, Action]):
         reward = 1 if numpy.random.rand() < self._probs[action] else -1
         return 0, reward, True
 
+    def available_actions(self) -> set[Action]:
+        return set(range(self._num_bandits))
+
     def evaluate(
         self,
         act: Callable[[State], Action],
@@ -58,7 +61,13 @@ class BanditAgent(BaseTorchAgent[State, Action]):
         super().__init__()
         self._policy = policy
 
-    def dist(self, state: State) -> TorchCategoricalDistribution:
+    def dist(
+        self,
+        state: State,
+        *,
+        available_actions: set[Action] | None = None,
+    ) -> TorchCategoricalDistribution:
+        del available_actions
         probs = self._policy(state)
         actions = list(range(len(probs)))
         return TorchCategoricalDistribution(probs, actions)
@@ -84,15 +93,35 @@ def run_reinforce() -> None:
         env.evaluate(agent.act)
 
 
+def run_qlearning() -> None:
+    from tinyrl.agent import QLearningAgent
+    from tinyrl.algorithms import QLearning
+
+    numpy.random.seed(16)
+
+    num_bandits = 10
+    actions: set[Action] = set(range(num_bandits))
+
+    env = Bandit(num_bandits)
+    agent = QLearningAgent[State, Action](actions)
+    qlearning = QLearning(env, agent)
+
+    qlearning.learn(max_episodes=1000)
+
+    env.evaluate(agent.act)
+
+
 if __name__ == "__main__":
     import sys
 
     if len(sys.argv) != 2:
-        print(f"Usage: {sys.argv[0]} [reinforce]")
+        print(f"Usage: {sys.argv[0]} [reinforce|qlearning]")
         sys.exit(1)
 
     if sys.argv[1] == "reinforce":
         run_reinforce()
+    elif sys.argv[1] == "qlearning":
+        run_qlearning()
     else:
         print(f"Invalid algorithm: {sys.argv[1]}")
         sys.exit(1)

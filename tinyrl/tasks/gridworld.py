@@ -5,6 +5,7 @@ import enum
 import time
 from typing import Callable, cast
 
+import numpy
 import torch
 
 from tinyrl.agent import BaseTorchAgent
@@ -64,6 +65,9 @@ class GridWorld(BaseEnvironment["State", "Action"]):
         done = self._state.position == self._goal
         reward = 0 if done else -1
         return self._state, reward, done
+
+    def available_actions(self) -> set[Action]:
+        return set(Action)
 
     def render(self) -> None:
         for y in range(self._size):
@@ -140,6 +144,7 @@ class GridWorldAgent(BaseTorchAgent[State, Action]):
 def run_reinforce() -> None:
     from tinyrl.algorithms import Reinforce
 
+    numpy.random.seed(16)
     torch.manual_seed(16)
 
     env = GridWorld(5)
@@ -162,6 +167,7 @@ def run_reinforce() -> None:
 def run_ppo() -> None:
     from tinyrl.algorithms import PPO
 
+    numpy.random.seed(16)
     torch.manual_seed(16)
 
     env = GridWorld(5)
@@ -186,17 +192,34 @@ def run_ppo() -> None:
         env.animate(agent.act)
 
 
+def run_qlearning() -> None:
+    from tinyrl.agent import QLearningAgent
+    from tinyrl.algorithms import QLearning
+
+    numpy.random.seed(16)
+
+    env = GridWorld(5)
+    actions = set(env.available_actions())
+    agent = QLearningAgent[State, Action](actions)
+    qlearning = QLearning(env=env, agent=agent)
+
+    qlearning.learn(max_episodes=1000)
+
+    env.animate(agent.act)
+
+
 if __name__ == "__main__":
     import sys
 
     if len(sys.argv) != 2:
-        print(f"Usage: {sys.argv[0]} [reinforce|ppo]")
+        print(f"Usage: {sys.argv[0]} [ppo|qlearning|reinforce]")
         sys.exit(1)
-
-    if sys.argv[1] == "reinforce":
-        run_reinforce()
-    elif sys.argv[1] == "ppo":
+    if sys.argv[1] == "ppo":
         run_ppo()
+    elif sys.argv[1] == "qlearning":
+        run_qlearning()
+    elif sys.argv[1] == "reinforce":
+        run_reinforce()
     else:
         print(f"Invalid algorithm: {sys.argv[1]}")
         sys.exit(1)
