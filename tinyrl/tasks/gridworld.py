@@ -126,8 +126,8 @@ class GridWorldValueNetwork(BaseValueNetwork[State]):
 
 
 class GridWorldActor(BaseActor[Action]):
-    def select(self, probs: torch.Tensor, action: Action) -> torch.Tensor:
-        return probs[action]
+    def index(self, action: Action) -> int:
+        return action
 
     def sample(self, probs: torch.Tensor) -> tuple[Action, float]:
         action = int(torch.multinomial(probs, 1).item())
@@ -135,7 +135,7 @@ class GridWorldActor(BaseActor[Action]):
 
 
 def run_reinforce() -> None:
-    from tinyrl.reinforce import Reinforce
+    from tinyrl.algorithms import Reinforce
 
     torch.manual_seed(16)
 
@@ -159,7 +159,7 @@ def run_reinforce() -> None:
 
 
 def run_ppo() -> None:
-    from tinyrl.ppo import PPO
+    from tinyrl.algorithms import PPO
 
     torch.manual_seed(16)
 

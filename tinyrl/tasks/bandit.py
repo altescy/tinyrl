@@ -56,8 +56,8 @@ class BanditActor(BaseActor[Action]):
     def __init__(self, num_bandits: int) -> None:
         self._num_bandits = num_bandits
 
-    def select(self, probs: torch.Tensor, action: Action) -> torch.Tensor:
-        return probs[action]
+    def index(self, action: Action) -> int:
+        return action
 
     def sample(self, probs: torch.Tensor) -> tuple[Action, float]:
         m = torch.distributions.Categorical(probs)  # type: ignore[no-untyped-call]
@@ -66,7 +66,7 @@ class BanditActor(BaseActor[Action]):
 
 
 def run_reinforce() -> None:
-    from tinyrl.reinforce import Reinforce
+    from tinyrl.algorithms import Reinforce
 
     numpy.random.seed(16)
     torch.manual_seed(16)
