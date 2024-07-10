@@ -14,7 +14,7 @@ learning algorithms with NumPy and PyTorch.
 ## Demos
 
 - [x] [Bandit](./tinyrl/tasks/bandit.py)
-- [x] [GridWorld](./tinyrl/tasks/grid_world.py)
+- [x] [GridWorld](./tinyrl/tasks/gridworld.py)
 
 ## Usage
 
