@@ -1,15 +1,15 @@
-from typing import Generic, TypeVar
+from typing import Generic
 
 import torch
 
-_T_State = TypeVar("_T_State")
+from tinyrl.types import T_State
 
 
-class BasePolicyNetwork(Generic[_T_State], torch.nn.Module):
-    def forward(self, state: _T_State) -> torch.Tensor:
+class BasePolicyNetwork(Generic[T_State], torch.nn.Module):
+    def forward(self, state: T_State) -> torch.Tensor:
         raise NotImplementedError
 
 
-class BaseValueNetwork(Generic[_T_State], torch.nn.Module):
-    def forward(self, state: _T_State) -> torch.Tensor:
+class BaseValueNetwork(Generic[T_State], torch.nn.Module):
+    def forward(self, state: T_State) -> torch.Tensor:
         raise NotImplementedError

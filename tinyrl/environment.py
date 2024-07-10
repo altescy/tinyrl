@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar
+from typing import Generic
 
-_T_State = TypeVar("_T_State")
-_T_Action = TypeVar("_T_Action")
+from tinyrl.types import T_Action, T_State
 
 
-class BaseEnvironment(Generic[_T_State, _T_Action]):
-    def reset(self) -> _T_State:
+class BaseEnvironment(Generic[T_State, T_Action]):
+    def reset(self) -> T_State:
         raise NotImplementedError
 
-    def step(self, action: _T_Action) -> tuple[_T_State, float, bool]:
+    def step(self, action: T_Action) -> tuple[T_State, float, bool]:
+        raise NotImplementedError
+
+    def available_actions(self) -> list[T_Action]:
         raise NotImplementedError

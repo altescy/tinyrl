@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar
+from typing import Generic
 
 import torch
 from tqdm.auto import tqdm
@@ -6,17 +6,15 @@ from tqdm.auto import tqdm
 from tinyrl.actor import BaseActor
 from tinyrl.environment import BaseEnvironment
 from tinyrl.network import BasePolicyNetwork
-
-_T_State = TypeVar("_T_State")
-_T_Action = TypeVar("_T_Action")
+from tinyrl.types import T_Action, T_State
 
 
-class Reinforce(Generic[_T_State, _T_Action]):
+class Reinforce(Generic[T_State, T_Action]):
     def __init__(
         self,
-        env: BaseEnvironment[_T_State, _T_Action],
-        actor: BaseActor[_T_Action],
-        policy: BasePolicyNetwork[_T_State],
+        env: BaseEnvironment[T_State, T_Action],
+        actor: BaseActor[T_Action],
+        policy: BasePolicyNetwork[T_State],
         optimizer: torch.optim.Optimizer,
         gamma: float,
     ) -> None:
@@ -28,8 +26,8 @@ class Reinforce(Generic[_T_State, _T_Action]):
 
     def _reinforce(
         self,
-        states: list[_T_State],
-        actions: list[_T_Action],
+        states: list[T_State],
+        actions: list[T_Action],
         rewards: list[float],
     ) -> float:
         self._policy.train()
