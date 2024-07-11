@@ -91,14 +91,15 @@ class GridWorld(BaseEnvironment["State", "Action"]):
         done = False
         state = self.reset()
         while not done and (max_steps is None or step < max_steps):
-            print(f"[ step: {step} ]")
             self.render()
+            print(f"step: {step}")
+            print("\033[F" * (self._size + 1), end="")
             action = act(state)
             state, _, done = self.step(action)
             time.sleep(interval)
             step += 1
-        print(f"[ step: {step} ]")
         self.render()
+        print(f"step: {step}")
 
 
 class GridWorldPolicyNetwork(BasePolicyNetwork[State]):
