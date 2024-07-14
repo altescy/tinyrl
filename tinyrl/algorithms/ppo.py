@@ -93,7 +93,7 @@ class PPO(Generic[T_State, T_Action]):
                     done = False
                     while not done:
                         states.append(state)
-                        action, action_prob = self._agent.sample(state)
+                        action, action_prob = self._agent.sample(self._env, state)
                         state, reward, done = self._env.step(action)
 
                         actions.append(action)

@@ -9,6 +9,7 @@ import numpy
 import torch
 
 from tinyrl.agent import BaseTorchAgent
+from tinyrl.constraints import CategoricalActionConstraint
 from tinyrl.distribution import TorchCategoricalDistribution
 from tinyrl.environment import BaseEnvironment
 from tinyrl.network import BasePolicyNetwork, BaseValueNetwork
@@ -66,8 +67,17 @@ class GridWorld(BaseEnvironment["State", "Action"]):
         reward = 0 if done else -1
         return self._state, reward, done
 
-    def available_actions(self) -> set[Action]:
-        return set(Action)
+    def available_actions(self, state: State) -> set[Action]:
+        actions = set(Action)
+        if state.position.x == 0:
+            actions.discard(Action.LEFT)
+        if state.position.x == self._size - 1:
+            actions.discard(Action.RIGHT)
+        if state.position.y == 0:
+            actions.discard(Action.UP)
+        if state.position.y == self._size - 1:
+            actions.discard(Action.DOWN)
+        return actions
 
     def render(self) -> None:
         for y in range(self._size):
@@ -82,7 +92,7 @@ class GridWorld(BaseEnvironment["State", "Action"]):
 
     def animate(
         self,
-        act: Callable[[State], Action],
+        act: Callable[[GridWorld, State], Action],
         *,
         max_steps: int | None = None,
         interval: float = 0.1,
@@ -94,7 +104,7 @@ class GridWorld(BaseEnvironment["State", "Action"]):
             self.render()
             print(f"step: {step}")
             print("\033[F" * (self._size + 1), end="")
-            action = act(state)
+            action = act(self, state)
             state, _, done = self.step(action)
             time.sleep(interval)
             step += 1
@@ -133,7 +143,7 @@ class GridWorldValueNetwork(BaseValueNetwork[State]):
 
 class GridWorldAgent(BaseTorchAgent[State, Action]):
     def __init__(self, policy: GridWorldPolicyNetwork) -> None:
-        super().__init__()
+        super().__init__(CategoricalActionConstraint())
         self._policy = policy
 
     def dist(self, state: State) -> TorchCategoricalDistribution:
@@ -200,8 +210,10 @@ def run_qlearning() -> None:
     numpy.random.seed(16)
 
     env = GridWorld(5)
-    actions = set(env.available_actions())
-    agent = QLearningAgent[State, Action](actions)
+    agent = QLearningAgent[State, Action](
+        set(Action),
+        constraint=CategoricalActionConstraint(),
+    )
     qlearning = QLearning(env=env, agent=agent)
 
     qlearning.learn(max_episodes=1000)

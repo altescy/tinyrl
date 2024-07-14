@@ -34,6 +34,14 @@ class CategoricalDistribution(BaseDistribution[_T, float]):
         self._values = values
         self._indices = numpy.arange(len(self._values))
 
+    @property
+    def probs(self) -> numpy.ndarray:
+        return self._probs
+
+    @property
+    def values(self) -> list[_T]:
+        return self._values
+
     def sample(self) -> _T:
         index = int(numpy.random.choice(self._indices, p=self._probs))
         return self._values[index]
@@ -47,6 +55,14 @@ class CategoricalDistribution(BaseDistribution[_T, float]):
     def entropy(self) -> float:
         return float(-numpy.sum(self._probs * numpy.log(self._probs)))
 
+    def mask(self, values: set[_T]) -> "CategoricalDistribution[_T]":
+        indices = [self.values.index(value) for value in values]
+        mask = numpy.zeros(len(self.probs))
+        mask[indices] = 1.0
+        probs = self._probs * mask
+        probs /= self._probs.sum()
+        return CategoricalDistribution(probs, self.values)
+
 
 class BaseTorchDistribution(BaseDistribution[_T, torch.Tensor], Generic[_T]):
     def log_prob(self, value: _T) -> torch.Tensor:
@@ -59,8 +75,16 @@ class TorchCategoricalDistribution(BaseTorchDistribution[_T]):
         probs: torch.Tensor,
         values: list[_T],
     ) -> None:
-        self.probs = probs
-        self.values = values
+        self._probs = probs
+        self._values = values
+
+    @property
+    def probs(self) -> torch.Tensor:
+        return self._probs
+
+    @property
+    def values(self) -> list[_T]:
+        return self._values
 
     def sample(self) -> _T:
         index = int(torch.multinomial(self.probs, 1).item())
@@ -72,3 +96,11 @@ class TorchCategoricalDistribution(BaseTorchDistribution[_T]):
 
     def entropy(self) -> torch.Tensor:
         return -torch.sum(self.probs * torch.log(self.probs))
+
+    def mask(self, values: set[_T]) -> "TorchCategoricalDistribution[_T]":
+        indices = [self.values.index(value) for value in values]
+        mask = torch.zeros_like(self.probs)
+        mask[indices] += 1.0
+        probs = self._probs * mask
+        probs = probs / probs.sum()
+        return TorchCategoricalDistribution(probs, self.values)

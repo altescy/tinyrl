@@ -35,7 +35,7 @@ class Reinforce(Generic[T_State, T_Action]):
         loss = next(self._agent.parameters()).new_tensor(0.0, requires_grad=False)
         for state, action, reward in reversed(list(zip(states, actions, rewards))):
             returns = reward + self._gamma * returns
-            action_prob = self._agent.prob(state, action)
+            action_prob = self._agent.prob(self._env, state, action)
             loss += -action_prob.log() * returns
 
         loss.backward()  # type: ignore[no-untyped-call]
@@ -53,7 +53,7 @@ class Reinforce(Generic[T_State, T_Action]):
                     done = False
                     while not done:
                         states.append(state)
-                        action, action_prob = self._agent.sample(state)
+                        action, action_prob = self._agent.sample(self._env, state)
                         state, reward, done = self._env.step(action)
                         actions.append(action)
                         rewards.append(reward)

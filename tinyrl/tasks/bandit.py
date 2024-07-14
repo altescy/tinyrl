@@ -27,18 +27,18 @@ class Bandit(BaseEnvironment[State, Action]):
         reward = 1 if numpy.random.rand() < self._probs[action] else -1
         return 0, reward, True
 
-    def available_actions(self) -> set[Action]:
+    def available_actions(self, state: State) -> set[Action]:
         return set(range(self._num_bandits))
 
     def evaluate(
         self,
-        act: Callable[[State], Action],
+        act: Callable[[Bandit, State], Action],
         *,
         num_trials: int = 100,
     ) -> None:
         reward = 0.0
         for _ in range(num_trials):
-            reward += self.step(act(0))[1]
+            reward += self.step(act(self, 0))[1]
 
         random_reward = num_trials * numpy.sum(2 * self._probs - 1) / self._num_bandits
 
