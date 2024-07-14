@@ -8,11 +8,11 @@ from typing import Callable, cast
 import numpy
 import torch
 
-from tinyrl.agent import BaseTorchAgent
+from tinyrl.agents import BaseTorchAgent
 from tinyrl.constraints import CategoricalActionConstraint
-from tinyrl.distribution import TorchCategoricalDistribution
-from tinyrl.environment import BaseEnvironment
-from tinyrl.network import BasePolicyNetwork, BaseValueNetwork
+from tinyrl.distributions import TorchCategoricalDistribution
+from tinyrl.environments import BaseEnvironment
+from tinyrl.networks import BasePolicyNetwork, BaseValueNetwork
 
 
 @dataclasses.dataclass(frozen=True)
@@ -204,7 +204,7 @@ def run_ppo() -> None:
 
 
 def run_qlearning() -> None:
-    from tinyrl.agent import QLearningAgent
+    from tinyrl.agents import QLearningAgent
     from tinyrl.algorithms import QLearning
 
     numpy.random.seed(16)
@@ -214,7 +214,7 @@ def run_qlearning() -> None:
         set(Action),
         constraint=CategoricalActionConstraint(),
     )
-    qlearning = QLearning(env=env, agent=agent)
+    qlearning = QLearning[State, Action](env=env, agent=agent)
 
     qlearning.learn(max_episodes=1000)
 

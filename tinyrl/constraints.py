@@ -1,7 +1,7 @@
 from typing import Generic
 
-from tinyrl.distribution import BaseDistribution, CategoricalDistribution, TorchCategoricalDistribution
-from tinyrl.environment import BaseEnvironment, ICategoricalActionEnvironment
+from tinyrl.distributions import BaseDistribution, CategoricalDistribution, TorchCategoricalDistribution
+from tinyrl.environments import BaseEnvironment, ICategoricalActionEnvironment
 from tinyrl.types import T_Action, T_Scalar, T_State
 
 

@@ -3,8 +3,8 @@ from typing import Generic
 import torch
 from tqdm.auto import tqdm
 
-from tinyrl.agent import BaseTorchAgent
-from tinyrl.environment import BaseEnvironment
+from tinyrl.agents import BaseTorchAgent
+from tinyrl.environments import BaseEnvironment
 from tinyrl.types import T_Action, T_State
 
 

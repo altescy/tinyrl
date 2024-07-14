@@ -3,8 +3,8 @@ from typing import Generic
 import torch
 
 from tinyrl.constraints import BaseActionConstraint
-from tinyrl.distribution import BaseDistribution, CategoricalDistribution
-from tinyrl.environment import BaseEnvironment
+from tinyrl.distributions import BaseDistribution, CategoricalDistribution
+from tinyrl.environments import BaseEnvironment
 from tinyrl.types import T_Action, T_Scalar, T_State
 from tinyrl.utils import softmax
 

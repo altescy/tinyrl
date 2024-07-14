@@ -6,10 +6,10 @@ from typing import Literal, TypeAlias, cast
 import numpy
 import torch
 
-from tinyrl.agent import BaseTorchAgent
-from tinyrl.distribution import TorchCategoricalDistribution
-from tinyrl.environment import BaseEnvironment
-from tinyrl.network import BasePolicyNetwork
+from tinyrl.agents import BaseTorchAgent
+from tinyrl.distributions import TorchCategoricalDistribution
+from tinyrl.environments import BaseEnvironment
+from tinyrl.networks import BasePolicyNetwork
 
 State: TypeAlias = Literal[0]
 Action: TypeAlias = int
@@ -94,7 +94,7 @@ def run_reinforce() -> None:
 
 
 def run_qlearning() -> None:
-    from tinyrl.agent import QLearningAgent
+    from tinyrl.agents import QLearningAgent
     from tinyrl.algorithms import QLearning
 
     numpy.random.seed(16)
@@ -104,7 +104,7 @@ def run_qlearning() -> None:
 
     env = Bandit(num_bandits)
     agent = QLearningAgent[State, Action](actions)
-    qlearning = QLearning(env, agent)
+    qlearning = QLearning[State, Action](env, agent)
 
     qlearning.learn(max_episodes=1000)
 
