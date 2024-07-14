@@ -1,4 +1,4 @@
-# TinyRL: Minimal Reinforcement Learning Implementations
+# 🤖 TinyRL: Minimal Reinforcement Learning Implementations
 
 This repository contains minimal implementations of various reinforcement
 learning algorithms with NumPy and PyTorch.
