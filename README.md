@@ -16,6 +16,7 @@ learning algorithms with NumPy and PyTorch.
 
 - [x] [Bandit](./tinyrl/tasks/bandit.py)
 - [x] [GridWorld](./tinyrl/tasks/gridworld.py)
+- [x] [CartPole](./tinyrl/tasks/cartpole.py)
 - [ ] Tic-Tac-Toe
 
 ## Usage
