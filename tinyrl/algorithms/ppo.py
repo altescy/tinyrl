@@ -70,7 +70,7 @@ class PPO(Generic[T_State, T_Action]):
         surr2 = torch.clamp(ratio, 1.0 - self._epsilon, 1.0 + self._epsilon) * advantages
 
         policy_loss = -torch.min(surr1, surr2).mean()
-        value_loss = (_returns - values).pow(2).mean()
+        value_loss = advantages.pow(2).mean()
         entropy_loss = torch.stack([dist.entropy() for dist in action_dists]).mean()
 
         loss = policy_loss + self._value_weight * value_loss + self._entropy_weight * entropy_loss
